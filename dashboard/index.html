@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alexander POS - Pannello Gestione</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root {
+    --gold: #D4A017;
+    --gold-light: #F5E6B8;
+    --gold-dark: #B8860B;
+    --stone-50: #FAFAF9;
+    --stone-100: #F5F5F4;
+    --stone-200: #E7E5E4;
+    --stone-300: #D6D3D1;
+    --stone-400: #A8A29E;
+    --stone-500: #78716C;
+    --stone-600: #57534E;
+    --stone-700: #44403C;
+    --stone-800: #292524;
+    --stone-900: #1C1917;
+    --emerald: #059669;
+    --emerald-light: #D1FAE5;
+    --emerald-dark: #047857;
+    --amber: #D97706;
+    --amber-light: #FEF3C7;
+    --red: #DC2626;
+    --red-light: #FEE2E2;
+    --sky: #0284C7;
+    --sky-light: #E0F2FE;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--stone-50);
+    color: var(--stone-800);
+    min-height: 100vh;
+  }
+
+  /* ── Login Page ── */
+  .login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--stone-100) 0%, var(--stone-50) 50%, var(--gold-light) 100%);
+  }
+
+  .login-card {
+    background: white;
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+    border: 1px solid var(--stone-200);
+  }
+
+  .login-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .login-logo .diamond {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .login-logo h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--stone-800);
+    letter-spacing: -0.5px;
+  }
+
+  .login-logo p {
+    font-size: 13px;
+    color: var(--stone-500);
+    margin-top: 4px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--stone-600);
+    margin-bottom: 6px;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--stone-200);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--stone-800);
+    background: var(--stone-50);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .form-group input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.15);
+    background: white;
+  }
+
+  .login-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--gold);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 8px;
+  }
+
+  .login-btn:hover { background: var(--gold-dark); }
+  .login-btn:active { transform: scale(0.98); }
+  .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .login-error {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: var(--red-light);
+    color: var(--red);
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    display: none;
+  }
+
+  .login-error.visible { display: block; }
+
+  /* ── Dashboard Layout ── */
+  .dashboard { display: none; min-height: 100vh; }
+  .dashboard.active { display: block; }
+  .login-container.hidden { display: none; }
+
+  /* Header */
+  .header {
+    background: white;
+    border-bottom: 1px solid var(--stone-200);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .header-brand .diamond { font-size: 24px; }
+
+  .header-brand h1 {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--stone-800);
+  }
+
+  .header-brand span {
+    font-size: 11px;
+    color: var(--stone-400);
+    font-weight: 500;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .refresh-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--stone-400);
+    font-weight: 500;
+  }
+
+  .refresh-info .countdown {
+    font-variant-numeric: tabular-nums;
+    min-width: 22px;
+    text-align: right;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--stone-200);
+    background: white;
+    color: var(--stone-600);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn:hover { background: var(--stone-100); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--gold);
+    color: white;
+    border-color: var(--gold);
+  }
+
+  .btn-primary:hover { background: var(--gold-dark); border-color: var(--gold-dark); }
+
+  .btn-logout {
+    background: var(--stone-100);
+    color: var(--stone-600);
+    border-color: var(--stone-200);
+  }
+
+  .btn-logout:hover { background: var(--red-light); color: var(--red); border-color: var(--red); }
+
+  /* Summary Bar */
+  .summary-bar {
+    max-width: 1200px;
+    margin: 24px auto 0;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .summary-card {
+    background: white;
+    border: 1px solid var(--stone-200);
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .summary-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .summary-icon.total { background: var(--stone-100); }
+  .summary-icon.online { background: var(--emerald-light); }
+  .summary-icon.offline { background: var(--stone-100); }
+  .summary-icon.outdated { background: var(--amber-light); }
+
+  .summary-value {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--stone-800);
+    line-height: 1;
+  }
+
+  .summary-label {
+    font-size: 11px;
+    color: var(--stone-500);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  /* Station Grid */
+  .stations-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 24px 40px;
+  }
+
+  .stations-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .stations-header h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--stone-700);
+  }
+
+  .stations-header .version-info {
+    font-size: 12px;
+    color: var(--stone-500);
+  }
+
+  .stations-header .version-info strong {
+    color: var(--emerald-dark);
+  }
+
+  .stations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 14px;
+  }
+
+  /* Station Card */
+  .station-card {
+    background: white;
+    border: 1px solid var(--stone-200);
+    border-radius: 16px;
+    padding: 20px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .station-card.online { border-color: var(--emerald); border-left: 4px solid var(--emerald); }
+  .station-card.online.outdated { border-color: var(--amber); border-left: 4px solid var(--amber); }
+  .station-card.offline { border-color: var(--stone-200); border-left: 4px solid var(--stone-300); opacity: 0.75; }
+
+  .station-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+  .station-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .station-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-dot.online { background: var(--emerald); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15); }
+  .status-dot.online.outdated { background: var(--amber); box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15); }
+  .status-dot.offline { background: var(--stone-300); }
+
+  .station-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--stone-800);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .station-status-text {
+    font-size: 11px;
+    color: var(--stone-400);
+    margin-top: 1px;
+  }
+
+  .version-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .version-badge.latest { background: var(--emerald-light); color: var(--emerald-dark); }
+  .version-badge.outdated { background: var(--amber-light); color: var(--amber); }
+  .version-badge.web { background: var(--sky-light); color: var(--sky); }
+  .version-badge .tag { font-family: inherit; font-size: 9px; font-weight: 600; }
+
+  /* Info Grid */
+  .station-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    margin-bottom: 14px;
+  }
+
+  .info-item label {
+    display: block;
+    font-size: 10px;
+    color: var(--stone-400);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 2px;
+  }
+
+  .info-item value {
+    display: block;
+    font-size: 12px;
+    color: var(--stone-700);
+    font-weight: 600;
+  }
+
+  .info-item value.mono {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  .info-item value.muted { color: var(--stone-400); font-weight: 400; font-style: italic; }
+
+  /* Actions */
+  .station-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--stone-100);
+  }
+
+  .btn-connect {
+    background: var(--sky);
+    color: white;
+    border-color: var(--sky);
+    font-weight: 700;
+  }
+
+  .btn-connect:hover { background: #0369A1; border-color: #0369A1; }
+  .btn-connect:disabled { background: var(--stone-200); border-color: var(--stone-200); color: var(--stone-400); }
+
+  .btn-copy {
+    background: var(--stone-100);
+    border-color: var(--stone-200);
+    color: var(--stone-600);
+  }
+
+  .btn-copy:hover { background: var(--stone-200); }
+  .btn-copy.copied { background: var(--emerald-light); color: var(--emerald-dark); border-color: var(--emerald); }
+
+  .no-remote {
+    font-size: 11px;
+    color: var(--stone-400);
+    font-style: italic;
+    margin-left: 4px;
+  }
+
+  /* Loading / Empty states */
+  .loading-state, .empty-state, .error-state {
+    text-align: center;
+    padding: 48px 20px;
+  }
+
+  .loading-state p { color: var(--stone-500); font-size: 14px; }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--stone-200);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state p {
+    color: var(--stone-400);
+    font-size: 14px;
+  }
+
+  .error-state {
+    background: var(--red-light);
+    border-radius: 12px;
+    color: var(--red);
+    font-size: 13px;
+    padding: 16px;
+  }
+
+  /* User email */
+  .user-email {
+    font-size: 11px;
+    color: var(--stone-400);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .summary-bar {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .summary-bar {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .summary-card { padding: 12px 14px; }
+    .summary-value { font-size: 22px; }
+
+    .stations-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .station-info {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .header-inner {
+      flex-wrap: wrap;
+    }
+
+    .header-brand h1 { font-size: 14px; }
+    .user-email { display: none; }
+
+    .login-card { padding: 32px 24px; }
+  }
+
+  /* Pulse animation for online dots */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .status-dot.online { animation: pulse 2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<div id="loginPage" class="login-container">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="diamond">&#x1F48E;</span>
+      <h1>Alexander POS</h1>
+      <p>Pannello Gestione Postazioni</p>
+    </div>
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="nome@esempio.it" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="login-btn" id="loginBtn">Accedi</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════ DASHBOARD ═══════════════ -->
+<div id="dashboard" class="dashboard">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <span class="diamond">&#x1F48E;</span>
+        <div>
+          <h1>Alexander POS</h1>
+          <span>Pannello Gestione</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="refresh-info">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span class="countdown" id="countdown">30s</span>
+        </div>
+        <button class="btn" onclick="loadStations()" id="refreshBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Aggiorna
+        </button>
+        <span class="user-email" id="userEmail"></span>
+        <button class="btn btn-logout" onclick="handleLogout()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Esci
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-bar" id="summaryBar">
+    <div class="summary-card">
+      <div class="summary-icon total">&#x1F5A5;</div>
+      <div>
+        <div class="summary-value" id="totalCount">-</div>
+        <div class="summary-label">Postazioni totali</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon online">&#x1F7E2;</div>
+      <div>
+        <div class="summary-value" id="onlineCount">-</div>
+        <div class="summary-label">Online</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon offline">&#x26AA;</div>
+      <div>
+        <div class="summary-value" id="offlineCount">-</div>
+        <div class="summary-label">Offline</div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon outdated">&#x26A0;</div>
+      <div>
+        <div class="summary-value" id="outdatedCount">-</div>
+        <div class="summary-label">Versione vecchia</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Richieste di assistenza (dalle casse, pagina «Assistenza tecnica») -->
+  <div class="stations-container" style="margin-bottom:24px">
+    <div class="stations-header">
+      <h2>Richieste di assistenza</h2>
+      <div class="version-info">
+        <select id="reqFilter" onchange="loadRequests()" style="font:inherit;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--stone-200)">
+          <option value="open">Aperte</option>
+          <option value="in_progress">In lavorazione</option>
+          <option value="resolved">Risolte</option>
+          <option value="all">Tutte</option>
+        </select>
+      </div>
+    </div>
+    <div id="requestsContent"><div class="loading-state"><div class="spinner"></div><p>Caricamento richieste...</p></div></div>
+  </div>
+
+  <!-- Stations -->
+  <div class="stations-container">
+    <div class="stations-header">
+      <h2>Postazioni registrate</h2>
+      <div class="version-info" id="versionInfo"></div>
+    </div>
+    <div id="stationsContent">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Caricamento postazioni...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Supabase Client ──
+const SUPABASE_URL = 'https://yizzgqgbksylpetlglmh.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpenpncWdia3N5bHBldGxnbG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNTEzMTEsImV4cCI6MjA5NjcyNzMxMX0.iU7FowlFgjRTx-7NHBltEIIj43y05pJS5rHR10CMtuQ';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── State ──
+let stations = [];
+let countdownSec = 30;
+let countdownTimer = null;
+let refreshTimer = null;
+
+// ── DOM Refs ──
+const $loginPage   = document.getElementById('loginPage');
+const $dashboard   = document.getElementById('dashboard');
+const $loginForm   = document.getElementById('loginForm');
+const $loginBtn    = document.getElementById('loginBtn');
+const $loginError  = document.getElementById('loginError');
+const $email       = document.getElementById('email');
+const $password    = document.getElementById('password');
+const $userEmail   = document.getElementById('userEmail');
+const $countdown   = document.getElementById('countdown');
+const $refreshBtn  = document.getElementById('refreshBtn');
+const $totalCount  = document.getElementById('totalCount');
+const $onlineCount = document.getElementById('onlineCount');
+const $offlineCount = document.getElementById('offlineCount');
+const $outdatedCount = document.getElementById('outdatedCount');
+const $versionInfo = document.getElementById('versionInfo');
+const $content     = document.getElementById('stationsContent');
+
+// ── Auth ──
+async function handleLogin(e) {
+  e.preventDefault();
+  $loginBtn.disabled = true;
+  $loginBtn.textContent = 'Accesso in corso...';
+  $loginError.classList.remove('visible');
+
+  const { data, error } = await sb.auth.signInWithPassword({
+    email: $email.value.trim(),
+    password: $password.value,
+  });
+
+  if (error) {
+    $loginError.textContent = error.message === 'Invalid login credentials'
+      ? 'Email o password non corretti.'
+      : error.message;
+    $loginError.classList.add('visible');
+    $loginBtn.disabled = false;
+    $loginBtn.textContent = 'Accedi';
+    return;
+  }
+
+  showDashboard(data.user);
+}
+
+async function handleLogout() {
+  clearInterval(countdownTimer);
+  clearInterval(refreshTimer);
+  await sb.auth.signOut();
+  $dashboard.classList.remove('active');
+  $loginPage.classList.remove('hidden');
+  $password.value = '';
+  $loginError.classList.remove('visible');
+}
+
+function showDashboard(user) {
+  $loginPage.classList.add('hidden');
+  $dashboard.classList.add('active');
+  $userEmail.textContent = user?.email ?? '';
+  loadStations();
+  startAutoRefresh();
+}
+
+// ── Check existing session on load ──
+async function checkSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    showDashboard(session.user);
+  }
+}
+
+// ── Data Loading ──
+async function loadStations() {
+  $refreshBtn.disabled = true;
+  const { data, error } = await sb
+    .from('pos_stations')
+    .select('*')
+    .order('last_seen', { ascending: false })
+    .limit(200);
+
+  $refreshBtn.disabled = false;
+
+  if (error) {
+    $content.innerHTML = '<div class="error-state">Errore caricamento: ' + escHtml(error.message) + '</div>';
+    return;
+  }
+
+  stations = data ?? [];
+  renderSummary();
+  renderStations();
+  resetCountdown();
+  loadRequests();
+}
+
+// ── Richieste di assistenza ──
+const REQ_STATUS = { open: 'Aperta', in_progress: 'In lavorazione', resolved: 'Risolta' };
+const REQ_CATEGORY = {
+  hardware: 'Hardware', stampante: 'Stampante / fiscale', pagamenti: 'Pagamenti / POS carta',
+  rete: 'Rete / Internet', software: 'Programma cassa', altro: 'Altro',
+};
+let lastOpenCount = null;
+
+async function loadRequests() {
+  const $req = document.getElementById('requestsContent');
+  const filter = document.getElementById('reqFilter').value;
+  let q = sb.from('support_requests').select('*').order('created_at', { ascending: false }).limit(100);
+  if (filter !== 'all') q = q.eq('status', filter);
+  const { data, error } = await q;
+  if (error) {
+    const rls = /row-level security|permission denied/i.test(error.message);
+    $req.innerHTML = '<div class="error-state">' + (rls
+      ? 'Questo account non è autorizzato a leggere le richieste: deve essere un utente attivo in app_users.'
+      : 'Errore caricamento richieste: ' + escHtml(error.message)) + '</div>';
+    return;
+  }
+  const rows = data ?? [];
+  // Avviso quando arriva una nuova richiesta aperta mentre la dashboard è aperta.
+  if (filter === 'open') {
+    if (lastOpenCount !== null && rows.length > lastOpenCount) {
+      showToast('Nuova richiesta di assistenza: ' + (rows[0]?.subject ?? ''));
+      document.title = '(' + rows.length + ') Assistenza — Alexander POS';
+    } else if (!rows.length) {
+      document.title = 'Alexander POS - Pannello Gestione';
+    }
+    lastOpenCount = rows.length;
+  }
+  if (!rows.length) {
+    $req.innerHTML = '<div class="empty-state"><p>Nessuna richiesta' + (filter !== 'all' ? ' «' + REQ_STATUS[filter].toLowerCase() + '»' : '') + '.</p></div>';
+    return;
+  }
+  let html = '<div class="stations-grid">';
+  for (const r of rows) {
+    const remote = r.remote_id ? escHtml(String(r.remote_id).replace(/\s/g, '')) : '';
+    const border = r.status === 'open' ? 'var(--amber)' : r.status === 'in_progress' ? '#0284C7' : 'var(--emerald)';
+    const who = [r.store_name, r.machine_label, r.operator_email, r.app_version ? 'v' + r.app_version : ''].filter(Boolean).map(escHtml).join(' · ');
+    html += `
+      <div class="station-card" style="border-left:4px solid ${border}">
+        <div class="station-top">
+          <div style="min-width:0">
+            <div class="station-name">${escHtml(r.subject)}</div>
+            <div class="station-status-text">${escHtml(REQ_STATUS[r.status] ?? r.status)} · ${escHtml(REQ_CATEGORY[r.category] ?? r.category)} · ${fmtDate(r.created_at)}</div>
+          </div>
+        </div>
+        ${r.description ? '<p style="font-size:13px;color:var(--stone-600);margin:8px 0;white-space:pre-wrap">' + escHtml(r.description) + '</p>' : ''}
+        <div class="station-status-text" style="margin-bottom:8px">${who || '—'}</div>
+        <div class="station-actions">
+          <button class="btn btn-connect" onclick="handleConnect('${remote}')" ${remote ? 'title="Apri RustDesk"' : 'disabled title="La cassa non ha inviato l\'ID RustDesk"'}>Connetti${remote ? ' (' + escHtml(fmtRemoteId(remote)) + ')' : ''}</button>
+          ${r.status !== 'in_progress' && r.status !== 'resolved' ? `<button class="btn btn-copy" onclick="setRequestStatus('${r.id}','in_progress')">In lavorazione</button>` : ''}
+          ${r.status !== 'resolved' ? `<button class="btn btn-copy" onclick="setRequestStatus('${r.id}','resolved')">Risolta</button>` : `<button class="btn btn-copy" onclick="setRequestStatus('${r.id}','open')">Riapri</button>`}
+        </div>
+      </div>`;
+  }
+  html += '</div>';
+  $req.innerHTML = html;
+}
+
+async function setRequestStatus(id, status) {
+  const patch = { status };
+  if (status === 'resolved') {
+    patch.resolved_at = new Date().toISOString();
+    const note = prompt('Nota per l\'operatore (facoltativa): cosa è stato fatto?');
+    if (note) patch.resolution_note = note;
+  }
+  const { error } = await sb.from('support_requests').update(patch).eq('id', id);
+  if (error) { showToast('Aggiornamento non riuscito: ' + error.message); return; }
+  loadRequests();
+}
+
+// ── Auto Refresh ──
+function startAutoRefresh() {
+  clearInterval(countdownTimer);
+  clearInterval(refreshTimer);
+  countdownSec = 30;
+
+  refreshTimer = setInterval(() => { loadStations(); }, 30000);
+  countdownTimer = setInterval(() => {
+    countdownSec--;
+    if (countdownSec < 0) countdownSec = 30;
+    $countdown.textContent = countdownSec + 's';
+  }, 1000);
+}
+
+function resetCountdown() {
+  countdownSec = 30;
+  $countdown.textContent = '30s';
+}
+
+// ── Helpers ──
+function isOnline(lastSeen) {
+  if (!lastSeen) return false;
+  const t = new Date(lastSeen).getTime();
+  if (isNaN(t)) return false;
+  return Date.now() - t < 3 * 60 * 1000;
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('it-IT', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  } catch { return iso; }
+}
+
+function fmtUptime(from, to) {
+  if (!from || !to) return '—';
+  try {
+    const ms = new Date(to).getTime() - new Date(from).getTime();
+    if (ms < 0 || isNaN(ms)) return '—';
+    const mins = Math.floor(ms / 60000);
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
+    if (days > 0) return days + 'g ' + (hours % 24) + 'h';
+    if (hours > 0) return hours + 'h ' + (mins % 60) + 'm';
+    return mins + 'm';
+  } catch { return '—'; }
+}
+
+function fmtOs(ua) {
+  if (!ua) return '—';
+  if (ua.includes('Windows NT 10.0')) return 'Windows 10/11';
+  if (ua.includes('Windows NT 6.3')) return 'Windows 8.1';
+  if (ua.includes('Windows NT 6.1')) return 'Windows 7';
+  if (ua.includes('Windows')) return 'Windows';
+  if (ua.includes('Mac OS X')) return 'macOS';
+  if (ua.includes('Linux')) return 'Linux';
+  return ua.length > 40 ? ua.slice(0, 40) + '...' : ua;
+}
+
+function fmtRemoteId(id) {
+  if (!id) return '';
+  return id.replace(/\s/g, '').replace(/(.{3})(?=.)/g, '$1 ');
+}
+
+function getLatestVersion() {
+  const versions = stations
+    .filter(s => isOnline(s.last_seen) && s.app_version && s.app_version !== 'web')
+    .map(s => s.app_version);
+  if (versions.length === 0) {
+    // Fallback: consider all stations, not just online
+    const all = stations
+      .filter(s => s.app_version && s.app_version !== 'web')
+      .map(s => s.app_version);
+    if (all.length === 0) return null;
+    return all.sort(cmpVer)[0];
+  }
+  return versions.sort(cmpVer)[0];
+}
+
+function cmpVer(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pb[i] || 0) - (pa[i] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Render Summary ──
+function renderSummary() {
+  const latest = getLatestVersion();
+  const online = stations.filter(s => isOnline(s.last_seen));
+  const offline = stations.filter(s => !isOnline(s.last_seen));
+  const outdated = stations.filter(s => {
+    if (!latest || !s.app_version || s.app_version === 'web') return false;
+    return s.app_version !== latest;
+  });
+
+  $totalCount.textContent = stations.length;
+  $onlineCount.textContent = online.length;
+  $offlineCount.textContent = offline.length;
+  $outdatedCount.textContent = outdated.length;
+
+  if (latest) {
+    $versionInfo.innerHTML = 'Versione corrente: <strong>v' + escHtml(latest) + '</strong>';
+  } else {
+    $versionInfo.textContent = '';
+  }
+}
+
+// ── Render Stations ──
+function renderStations() {
+  if (stations.length === 0) {
+    $content.innerHTML = '<div class="empty-state"><p>Nessuna postazione registrata.</p></div>';
+    return;
+  }
+
+  const latest = getLatestVersion();
+  let html = '<div class="stations-grid">';
+
+  for (const s of stations) {
+    const online = isOnline(s.last_seen);
+    const outdated = !!(latest && s.app_version && s.app_version !== 'web' && s.app_version !== latest);
+    const isWeb = s.app_version === 'web';
+
+    const cardClass = online
+      ? (outdated ? 'station-card online outdated' : 'station-card online')
+      : 'station-card offline';
+
+    const dotClass = online
+      ? (outdated ? 'status-dot online outdated' : 'status-dot online')
+      : 'status-dot offline';
+
+    let versionBadge = '';
+    if (s.app_version) {
+      if (isWeb) {
+        versionBadge = '<span class="version-badge web">web</span>';
+      } else if (outdated) {
+        versionBadge = '<span class="version-badge outdated">v' + escHtml(s.app_version) + ' <span class="tag">(vecchia)</span></span>';
+      } else {
+        versionBadge = '<span class="version-badge latest">v' + escHtml(s.app_version) + '</span>';
+      }
+    } else {
+      versionBadge = '<span style="font-size:12px;color:var(--stone-400)">—</span>';
+    }
+
+    const name = escHtml(s.machine_label || s.store_name || 'Senza nome');
+    const statusText = online ? 'Online' : 'Offline';
+    const os = escHtml(fmtOs(s.os_info));
+    const remoteFormatted = s.remote_id ? fmtRemoteId(s.remote_id) : '';
+    const safeRemoteId = s.remote_id ? escHtml(s.remote_id.replace(/\s/g, '')) : '';
+
+    html += `
+      <div class="${cardClass}">
+        <div class="station-top">
+          <div class="station-identity">
+            <div class="${dotClass}"></div>
+            <div style="min-width:0">
+              <div class="station-name">${name}</div>
+              <div class="station-status-text">${statusText} &middot; ${os}</div>
+            </div>
+          </div>
+          ${versionBadge}
+        </div>
+        <div class="station-info">
+          <div class="info-item">
+            <label>Ultimo contatto</label>
+            <value>${fmtDate(s.last_seen)}</value>
+          </div>
+          <div class="info-item">
+            <label>Prima registrazione</label>
+            <value>${fmtDate(s.created_at)}</value>
+          </div>
+          <div class="info-item">
+            <label>Uptime</label>
+            <value>${fmtUptime(s.created_at, s.last_seen)}</value>
+          </div>
+          <div class="info-item">
+            <label>RustDesk ID</label>
+            <value class="${s.remote_id ? 'mono' : 'muted'}">${s.remote_id ? escHtml(remoteFormatted) : 'ID non disponibile'}</value>
+          </div>
+        </div>
+        <div class="station-actions">
+          <button class="btn btn-connect" onclick="handleConnect('${safeRemoteId}')" ${!s.remote_id ? 'disabled title="ID non disponibile"' : 'title="Apri RustDesk"'}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Connetti
+          </button>
+          <button class="btn btn-copy" id="copy-${safeRemoteId}" onclick="handleCopy('${safeRemoteId}')" ${!s.remote_id ? 'disabled title="ID non disponibile"' : 'title="Copia ID negli appunti"'}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copia ID
+          </button>
+          ${!s.remote_id ? '<span class="no-remote">RustDesk non rilevato</span>' : ''}
+        </div>
+      </div>`;
+  }
+
+  html += '</div>';
+  $content.innerHTML = html;
+}
+
+// ── Actions ──
+function handleConnect(remoteId) {
+  if (!remoteId) return;
+  navigator.clipboard.writeText(remoteId).catch(() => {});
+  if (window.location.protocol === 'https:' || window.location.protocol === 'http:') {
+    window.location.href = 'rustdesk://' + remoteId;
+    showToast('Avvio RustDesk per ' + remoteId + '…');
+  } else {
+    showToast('ID ' + remoteId + ' copiato — incollalo in RustDesk per connetterti');
+  }
+  const btn = event && event.target.closest('.btn-connect');
+  if (btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ID copiato!';
+    btn.style.background = '#059669';
+    btn.style.borderColor = '#059669';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.borderColor = ''; }, 3000);
+  }
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1C1917;color:white;padding:12px 24px;border-radius:12px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:90%;text-align:center';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 4000);
+}
+
+async function handleCopy(remoteId) {
+  if (!remoteId) return;
+  try {
+    await navigator.clipboard.writeText(remoteId);
+    const btn = document.getElementById('copy-' + remoteId);
+    if (btn) {
+      btn.classList.add('copied');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copiato!';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
+    }
+  } catch { /* clipboard unavailable */ }
+}
+
+// ── Init ──
+checkSession();
+</script>
+</body>
+</html>
